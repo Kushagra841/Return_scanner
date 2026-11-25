@@ -1,4 +1,4 @@
-// Google Apps Script: receives scans from the Return Packing Log page and adds each one as a row.
+// Google Apps Script: receives scans from the Return Scan Log page and adds each one as a row.
 // Paste this into Extensions > Apps Script inside the NEW returns Google Sheet.
 
 const SECRET = "shantam@143";   // must be the same as SECRET in the page (index.html)

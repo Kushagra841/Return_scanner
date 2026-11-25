@@ -1,4 +1,4 @@
-# Return Packing Log
+# Return Scan Log
 
 A copy of the Packing Scan Log (https://github.com/Kushagra841/scanner) for **returns**. Same page and features, with:
 
@@ -18,7 +18,7 @@ Live page: https://kushagra841.github.io/Return_scanner/
 
 ## First-time setup of the returns Google Sheet
 
-1. Create a new Google Sheet (for example "Return Packing Log").
+1. Create a new Google Sheet (for example "Return Scan Log").
 2. **Extensions → Apps Script**, delete the sample code, paste in `scan_server.gs`.
 3. Change `const ADMIN_KEY = "...";` to your own admin password. Save.
 4. **Deploy → New deployment → type: Web app**. Execute as: **Me**. Who has access: **Anyone**. Deploy and allow access.
