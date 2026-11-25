@@ -7,7 +7,7 @@ A copy of the Packing Scan Log (https://github.com/Kushagra841/scanner) for **re
 - Status column says `Return` instead of `Forward`.
 - Its own saved data on the PC, so the packing page's waiting scans are never sent here and vice versa.
 
-Live page: https://kushagra841.github.io/return_scanner/
+Live page: https://kushagra841.github.io/Return_scanner/
 
 ## Files
 
