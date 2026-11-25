@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Return Packing Log</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Segoe UI, Arial, sans-serif; margin: 0; background: #f2f4f7; color: #1d2733; }
+  header { background: #7a1f3d; color: #fff; padding: 14px 24px; font-size: 22px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  #net { font-size: 15px; font-weight: 600; padding: 6px 12px; border-radius: 20px; background: #f6e6ec; color: #7a1f3d; }
+  #net.ok { background: #c8f0cf; color: #135c22; }
+  #net.wait { background: #ffe3a3; color: #7a4b00; }
+  #net.bad { background: #ffc9c9; color: #8a1111; }
+  main { max-width: 900px; margin: 20px auto; padding: 0 16px; }
+  .card { background: #fff; border-radius: 10px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+  label { font-weight: 600; display: block; margin-bottom: 6px; }
+  input[type=text], input[type=password] { width: 100%; font-size: 22px; padding: 12px; border: 2px solid #9aa7b5; border-radius: 8px; }
+  #code { font-size: 34px; padding: 18px; border-color: #7a1f3d; }
+  #status { margin-top: 12px; padding: 14px; border-radius: 8px; font-size: 20px; font-weight: 600; background: #e8edf3; text-align: center; overflow-wrap: anywhere; }
+  #status.ok  { background: #c8f0cf; color: #135c22; }
+  #status.dup { background: #ffe3a3; color: #7a4b00; }
+  #status.err { background: #ffc9c9; color: #8a1111; }
+  .who { display: flex; gap: 12px; flex-wrap: wrap; }
+  .who > div { flex: 1; min-width: 200px; }
+  select { width: 100%; font-size: 22px; padding: 12px; border: 2px solid #9aa7b5; border-radius: 8px; background: #fff; color: #1d2733; }
+  .bar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 10px; }
+  .count { font-size: 18px; }
+  button { font-size: 16px; padding: 12px 18px; border: 0; border-radius: 8px; background: #7a1f3d; color: #fff; cursor: pointer; }
+  button.grey { background: #6b7785; }
+  table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e1e6ec; white-space: nowrap; }
+  th { background: #eef2f6; position: sticky; top: 0; }
+  tr.dup td { background: #fff4d6; }
+  .scroll { max-height: 380px; overflow: auto; }
+  .sent { color: #135c22; font-weight: 600; }
+  .pending { color: #8a5a00; font-weight: 600; }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  button.danger { background: #b03030; }
+  .btns label.day { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 16px; }
+  .btns input[type=date] { font-size: 16px; padding: 9px 10px; border: 2px solid #9aa7b5; border-radius: 8px; }
+  .btns input[type=date]:disabled { opacity: .5; }
+  .btns input[type=checkbox] { width: 18px; height: 18px; }
+  #modal, #clearModal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 20; }
+  #modal[hidden], #clearModal[hidden] { display: none; }
+  #modal .box, #clearModal .box { background: #fff; border-radius: 12px; padding: 22px; width: 100%; max-width: 400px; }
+  #modal p, #clearModal p { margin: 0 0 12px; }
+  #modal .btns, #clearModal .btns { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+  #modalErr, .modalErr { margin-top: 8px; padding: 6px 10px; border-radius: 6px; background: #ffc9c9; color: #8a1111; font-weight: 600; }
+</style>
+</head>
+<body>
+<header><span>Return Packing Log</span><span id="net">Starting...</span></header>
+<main>
+  <div class="card">
+    <div class="who">
+      <div>
+        <label for="packer">Packer name</label>
+        <input type="text" id="packer" placeholder="Type your name once" autocomplete="off">
+      </div>
+      <div>
+        <label for="table">Set / Camera no.</label>
+        <select id="table"><option value="">Select...</option></select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <label for="code">Scan barcode here</label>
+    <input type="text" id="code" autocomplete="off" autofocus>
+    <div id="status">Ready. Scan a barcode.</div>
+  </div>
+
+  <div class="card">
+    <div class="bar">
+      <div class="count" id="count"></div>
+      <div class="btns">
+        <button id="clear" class="grey">Clear list</button>
+        <label class="day" for="day">Day
+          <input type="date" id="day">
+        </label>
+        <label class="day"><input type="checkbox" id="allDays"> All days</label>
+        <button id="export">Download Excel (CSV)</button>
+      </div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Date</th><th>Time</th><th>Packer</th><th>Camera</th><th>Barcode</th><th>Status</th><th>Sent</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div id="modal" hidden>
+  <div class="box">
+    <p id="modalMsg">Admin only. Type the admin password to download every packer's scans.</p>
+    <label for="pw">Admin password</label>
+    <input type="password" id="pw" autocomplete="off">
+    <div id="modalErr" hidden></div>
+    <div class="btns">
+      <button id="modalCancel" class="grey">Cancel</button>
+      <button id="modalOk">Download</button>
+    </div>
+  </div>
+</div>
+
+<div id="clearModal" class="overlay" hidden>
+  <div class="box">
+    <p id="clearMsg"></p>
+    <label for="clearPw">Admin password</label>
+    <input type="password" id="clearPw" autocomplete="off">
+    <div id="clearErr" class="modalErr" hidden>Wrong password.</div>
+    <div class="btns">
+      <button id="clearCancel" class="grey">Cancel</button>
+      <button id="clearOk" class="danger">Clear list</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- SETTINGS: the admin fills these two lines in once ----
+const SCRIPT_URL = "PASTE_NEW_RETURN_SCRIPT_URL_HERE";
+const SECRET = "shantam@143";                   // same word as SECRET in the Google script
+const CLEAR_PASSWORD = "1234";                   // password to clear the list on screen (change this)
+// -----------------------------------------------------------
+
+const CAMERAS_PER_SET = 4;                       // cameras in each set (Set A and Set B)
+const KEY = "return_scan_log_v1";
+const $ = id => document.getElementById(id);
+const codeBox = $("code"), packerBox = $("packer"), tableBox = $("table"), statusBox = $("status"), net = $("net"), modal = $("modal");
+const configured = !SCRIPT_URL.includes("PASTE_");
+
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
+function save(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); return true; } catch (e) { return false; } }
+
+const p2 = n => String(n).padStart(2, "0"), p3 = n => String(n).padStart(3, "0");
+const dateStr = d => `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+const timeStr = d => `${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}.${p3(d.getMilliseconds())}`;
+
+function beep(freq, ms) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(); o.frequency.value = freq; o.connect(ctx.destination);
+    o.start(); setTimeout(() => { o.stop(); ctx.close(); }, ms);
+  } catch (e) {}
+}
+function setStatus(text, cls) { statusBox.textContent = text; statusBox.className = cls || ""; }
+function setNet(text, cls) { net.textContent = text; net.className = cls || ""; }
+function focusScan() { if (modal.hidden && $("clearModal").hidden) codeBox.focus(); }
+
+let lastId = null;
+
+function render() {
+  const list = load();
+  const today = dateStr(new Date());
+  const waiting = list.filter(r => !r.sent).length;
+  $("count").textContent = `Scans today on this PC: ${list.filter(r => r.date === today).length}` +
+                           (waiting ? `   |   Waiting to send: ${waiting}` : "");
+  const body = $("rows"); body.textContent = "";
+  list.slice(-50).reverse().forEach(r => {
+    const tr = document.createElement("tr");
+    if (r.repeat) tr.className = "dup";
+    [r.date, r.time, r.packer, r.table || "", r.code, "Return"].forEach(v => {
+      const td = document.createElement("td"); td.textContent = v; tr.appendChild(td);
+    });
+    const td = document.createElement("td");
+    td.textContent = r.sent ? "Yes" : "Waiting"; td.className = r.sent ? "sent" : "pending";
+    tr.appendChild(td); body.appendChild(tr);
+  });
+  if (!configured) setNet("Not connected to Google Sheet", "bad");
+  else if (waiting) setNet(`Sending... (${waiting} waiting)`, "wait");
+  else setNet("All scans sent", "ok");
+}
+
+// ---- sending: waiting scans go in batches, in order, retried until it works ----
+const BATCH_SIZE = 25;            // scans sent together in one request
+let batchOK = true;               // turns false if the Google script is an older one that takes one scan at a time
+let sending = false;
+
+async function post(body) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 30000);
+  try {
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(body), signal: ctl.signal
+    });
+    return await res.json();
+  } finally { clearTimeout(timer); }
+}
+const pick = r => ({ id: r.id, date: r.date, time: r.time, packer: r.packer, table: r.table, code: r.code });
+
+async function flush() {
+  if (sending || !configured) return;
+  sending = true;
+  try {
+    while (true) {
+      const waiting = load().filter(r => !r.sent);
+      if (!waiting.length) break;
+      const group = waiting.slice(0, batchOK ? BATCH_SIZE : 1);
+
+      let results;                                   // [{ id, repeat, firstSeen }, ...]
+      try {
+        if (batchOK) {
+          const out = await post({ key: SECRET, items: group.map(pick) });
+          if (out && out.ok && Array.isArray(out.results)) results = out.results;
+          else if (out && (out.ok || out.error === "missing data")) { batchOK = false; continue; }   // older script: send one by one
+          else { setNet("Could not send. Tell the admin.", "bad"); break; }
+        } else {
+          const out = await post(Object.assign({ key: SECRET }, pick(group[0])));
+          if (!out || !out.ok) { setNet("Could not send. Tell the admin.", "bad"); break; }
+          results = [Object.assign({ id: group[0].id }, out)];
+        }
+      } catch (e) { setNet("No internet. Scans are safe on this PC.", "wait"); break; }
+      if (!results.length) { setNet("Could not send. Tell the admin.", "bad"); break; }
+
+      const fresh = load();
+      results.forEach(res => {
+        const row = fresh.find(r => r.id === res.id);
+        if (!row) return;
+        row.sent = true;
+        if (res.repeat) row.repeat = true;
+        if (res.repeat && res.id === lastId) {
+          setStatus(`ALREADY SCANNED before (${res.firstSeen}).`, "dup"); beep(300, 500);
+        }
+      });
+      // keep unsent rows and the latest 200 sent rows
+      const keep = fresh.filter(r => !r.sent).concat(fresh.filter(r => r.sent).slice(-200));
+      save(fresh.filter(r => keep.includes(r)));
+      render();
+    }
+  } finally { sending = false; render(); }
+}
+setInterval(flush, 10000);
+window.addEventListener("online", flush);
+
+// ---- scanning ----
+codeBox.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  e.preventDefault();
+  const now = new Date();                          // exact moment the scan arrives
+  const code = codeBox.value.trim();
+  codeBox.value = "";
+  if (!code) return;
+  const packer = packerBox.value.trim();
+  if (!packer) { setStatus("Please type your name first, then scan again.", "err"); beep(200, 400); packerBox.focus(); return; }
+  const table = tableBox.value;
+  if (!table) { setStatus("Please choose your set and camera number first, then scan again.", "err"); beep(200, 400); tableBox.focus(); return; }
+
+  const list = load();
+  const earlier = list.find(r => r.code === code);
+  const item = { id: now.getTime().toString(36) + Math.random().toString(36).slice(2, 7),
+                 date: dateStr(now), time: timeStr(now), packer, table, code, sent: false, repeat: !!earlier };
+  list.push(item);
+  if (!save(list)) { setStatus("COULD NOT SAVE. Tell the admin.", "err"); beep(200, 600); return; }
+  lastId = item.id;
+
+  if (earlier) { setStatus(`ALREADY SCANNED before (${earlier.date} ${earlier.time}). Saved again.`, "dup"); beep(300, 500); }
+  else { setStatus(`Saved: ${code}   at ${timeStr(now)}`, "ok"); beep(1000, 120); }
+  render();
+  flush();
+});
+
+// ---- download everything from the central sheet (admin password asked first) ----
+function openModal() {
+  if (!$("allDays").checked && !$("day").value) { setStatus("Pick a day first, or tick All days.", "err"); return; }
+  $("modalMsg").textContent = "Admin only. Type the admin password to download " +
+    ($("allDays").checked ? "scans for ALL days." : `scans for ${$("day").value}.`);
+  $("pw").value = ""; $("modalErr").hidden = true; modal.hidden = false; $("pw").focus(); }
+function closeModal() { modal.hidden = true; focusScan(); }
+
+async function doDownload() {
+  const pw = $("pw").value;
+  const err = $("modalErr");
+  if (!pw) { err.textContent = "Type the admin password."; err.hidden = false; return; }
+  if (!configured) { err.textContent = "Not connected to the Google Sheet."; err.hidden = false; return; }
+  const ok = $("modalOk"); ok.disabled = true; ok.textContent = "Getting scans...";
+  try {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 60000);
+    const res = await fetch(SCRIPT_URL, {
+      method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "export", admin: pw, day: $("allDays").checked ? "" : $("day").value }), signal: ctl.signal
+    });
+    clearTimeout(timer);
+    const out = await res.json();
+    if (!out.ok) { err.textContent = out.error === "wrong admin password" ? "Wrong password." : "Not allowed: " + out.error; err.hidden = false; return; }
+
+    const day = $("allDays").checked ? "" : $("day").value;          // "" means every day
+    const rows = day ? out.rows.filter(r => String(r[1]).slice(0, 10) === day) : out.rows;
+    if (!rows.length) { err.textContent = day ? `No scans found for ${day}.` : "No scans in the sheet yet."; err.hidden = false; return; }
+
+    const q = s => '"' + String(s).replace(/"/g, '""') + '"';
+    const txt = s => '"=""' + String(s).replace(/"/g, '""""') + '"""';   // Excel shows it as text, exactly
+    const lines = ["Date,Time,Packer,Camera / Table,Barcode,Repeat scan,Received at,Status"].concat(
+      // ="..." makes Excel show the value exactly as written (long barcodes stay whole,
+      // and times like 12:11:10.683 are not turned into "11:10.7")
+      rows.map(r => [txt(r[1]), txt(r[2]), q(r[3]), q(r[8] || ""), txt(r[4]), r[5], txt(r[6]), r[7] || "Return"].join(",")));
+    const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = day ? `return_scans_${day}.csv` : `return_scans_all_till_${dateStr(new Date())}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    closeModal();
+    setStatus(`Downloaded ${rows.length} scans` + (day ? ` for ${day}.` : " (all days)."), "ok");
+  } catch (e) {
+    err.textContent = "Could not download. Check the internet and try again."; err.hidden = false;
+  } finally { ok.disabled = false; ok.textContent = "Download"; }
+}
+$("export").addEventListener("click", openModal);
+$("modalCancel").addEventListener("click", closeModal);
+$("modalOk").addEventListener("click", doDownload);
+$("pw").addEventListener("keydown", e => { if (e.key === "Enter") doDownload(); if (e.key === "Escape") closeModal(); });
+
+// ---- clear the list on this PC (the Google Sheet is NOT touched) ----
+// Scans that are still waiting to be sent are kept, so nothing is ever lost.
+const clearModal = $("clearModal");
+function closeClear() { clearModal.hidden = true; focusScan(); }
+$("clear").addEventListener("click", () => {
+  const list = load();
+  const sent = list.filter(r => r.sent).length, waiting = list.length - sent;
+  if (!list.length) { setStatus("The list is already empty."); return; }
+  if (!sent) { setStatus(`Nothing to clear yet: ${waiting} scan(s) still waiting to send.`, "dup"); return; }
+  $("clearMsg").textContent = `Clear ${sent} sent scan(s) from this screen? They stay saved in the Google Sheet.` +
+    (waiting ? ` ${waiting} scan(s) still waiting to send will be kept.` : "");
+  $("clearPw").value = ""; $("clearErr").hidden = true;
+  clearModal.hidden = false; $("clearPw").focus();
+});
+function doClear() {
+  if ($("clearPw").value !== CLEAR_PASSWORD) { $("clearErr").hidden = false; $("clearPw").select(); beep(200, 300); return; }
+  const kept = load().filter(r => !r.sent);
+  save(kept); closeClear(); render();
+  setStatus(kept.length ? `List cleared. ${kept.length} scan(s) still waiting to send.` : "List cleared.", "ok");
+}
+$("clearCancel").addEventListener("click", closeClear);
+$("clearOk").addEventListener("click", doClear);
+clearModal.addEventListener("keydown", e => { if (e.key === "Escape") closeClear(); if (e.key === "Enter") doClear(); });
+
+codeBox.addEventListener("blur", () => setTimeout(() => { if (document.activeElement === document.body) focusScan(); }, 50));
+document.addEventListener("click", e => {
+  if (e.target === packerBox || e.target === tableBox || e.target.closest("button") || e.target.closest("#modal, #clearModal")) return;
+  focusScan();
+});
+["A", "B"].forEach(set => {                       // Set A: cameras 1-4, Set B: cameras 1-4
+  const g = document.createElement("optgroup"); g.label = "Set " + set;
+  for (let i = 1; i <= CAMERAS_PER_SET; i++) {
+    const o = document.createElement("option"); o.value = `${set}-${i}`; o.textContent = `Set ${set} - Camera ${i}`; g.appendChild(o);
+  }
+  tableBox.appendChild(g);
+});
+try { tableBox.value = localStorage.getItem("return_table_no") || ""; } catch (e) {}
+tableBox.addEventListener("change", () => { try { localStorage.setItem("return_table_no", tableBox.value); } catch (e) {} focusScan(); });
+packerBox.addEventListener("keydown", e => { if (e.key === "Enter") { localStorage.setItem("return_packer_name", packerBox.value.trim()); codeBox.focus(); } });
+packerBox.addEventListener("change", () => localStorage.setItem("return_packer_name", packerBox.value.trim()));
+
+try { packerBox.value = localStorage.getItem("return_packer_name") || ""; } catch (e) {}
+$("day").value = dateStr(new Date());            // the day picker starts on today
+$("day").max = dateStr(new Date());
+$("allDays").addEventListener("change", () => { $("day").disabled = $("allDays").checked; });
+$("day").addEventListener("change", focusScan);
+render();
+focusScan();
+flush();
+</script>
+</body>
+</html>
